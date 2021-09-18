@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.gtechg2.ccportal</groupId>
+        <artifactId>cashierapp</artifactId>
+        <version>1.0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>${project.build.siteName}-cashier-application-rpm</artifactId>
+    <packaging>pom</packaging>
+    <name>${project.build.siteName}-cashier-application-rpm</name>
+    <description>
+        ${project.build.siteName} cashier application- rpm package
+    </description>
+
+    <distributionManagement>
+        <snapshotRepository>
+            <id>${project.build.siteName}-snapshots-rpms</id>
+            <url>http://156.24.67.184:8080/content/repositories/${project.build.siteName}-snapshots-rpms</url>
+        </snapshotRepository>
+        <repository>
+            <id>${project.build.siteName}-release-rpms</id>
+            <url>http://156.24.67.184:8080/content/repositories/${project.build.siteName}-release-rpms</url>
+        </repository>
+    </distributionManagement>
+
+
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>cashierapp-web</artifactId>
+            <version>${project.version}</version>
+            <type>war</type>
+        </dependency>
+    </dependencies>
+
+    <properties>
+        <rpm.workarea>${project.build.directory}/rpm-workarea</rpm.workarea>
+		<!-- rhnpush tests-->
+		<rhn.server>xxrirhnpilot.corp.gtech.com</rhn.server>
+		<rhn.channel.snapshot>igt-pay-stn-snapshot</rhn.channel.snapshot>
+		<rhn.channel.release>igt-pay-stn-release</rhn.channel.release>
+		<rhn.user>jenkins</rhn.user>
+		<rhn.password>jenkins</rhn.password>
+
+		<rpm.copyright>2020 IGT Corporation</rpm.copyright>
+		<rpm.distribution>IGT REST Services RPM 2020</rpm.distribution>
+		<rpm.group>Lottery/Middleware</rpm.group>
+		<rpm.defaultDirmode>775</rpm.defaultDirmode>
+		<rpm.defaultFilemode>766</rpm.defaultFilemode>
+		<rpm.defaultUsername>tomcat</rpm.defaultUsername>
+		<rpm.defaultGroupname>tomcat</rpm.defaultGroupname>
+
+		<!-- tomcat Properties -->
+		<tomcat.dir>/var/lib/tomcat8</tomcat.dir>
+		<tomcat.webapps.dir>${tomcat.dir}/webapps</tomcat.webapps.dir>
+
+		<timestamp>${maven.build.timestamp}</timestamp>
+		<maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
+
+		<exec-maven-plugin.version>1.4.0</exec-maven-plugin.version>
+		<maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
+		<maven-dependency-plugin.version>2.8</maven-dependency-plugin.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+
+    <profiles>
+        <profile>
+            <id>windows-package</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <properties>
+                <packaging.type>pom</packaging.type>
+            </properties>
+        </profile>
+        <profile>
+            <id>rpm</id>
+            <properties>
+                <packaging.type>rpm</packaging.type>
+            </properties>
+            <build>
+                <finalName>${project.artifactId}</finalName>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <version>${maven-deploy-plugin.version}</version>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>${maven-dependency-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>copy</id>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>${project.groupId}</groupId>
+                                            <artifactId>cashierapp-web</artifactId>
+                                            <version>${project.version}</version>
+                                            <type>war</type>
+                                            <outputDirectory>${project.build.directory}/cashierapp-web</outputDirectory>
+                                            <destFileName>cashierapp${project.build.siteName}.war</destFileName>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>rpm-maven-plugin</artifactId>
+                        <version>${rpm-maven-plugin.version}</version>
+                        <extensions>true</extensions>
+                        <executions>
+                            <execution>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>rpm</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <name>${project.artifactId}</name>
+							<group>${rpm.group}</group>
+							<copyright>${rpm.copyright}</copyright>
+							<distribution>${rpm.distribution}</distribution>
+							<defaultDirmode>${rpm.defaultDirmode}</defaultDirmode>
+							<defaultFilemode>${rpm.defaultFilemode}</defaultFilemode>
+							<defaultUsername>${rpm.defaultUsername}</defaultUsername>
+							<defaultGroupname>${rpm.defaultGroupname}</defaultGroupname>
+							<mappings>
+                                <mapping>
+									<directory>${tomcat.webapps.dir}</directory>
+									<configuration>false</configuration>
+									<directoryIncluded>false</directoryIncluded>
+									<filemode>644</filemode>
+                                    <sources>
+                                        <source>
+                                            <location>${project.build.directory}/cashierapp-web</location>
+                                            <includes>
+                                                <include>**/*</include>
+                                            </includes>
+                                        </source>
+                                    </sources>
+                                </mapping>
+                            </mappings>
+
+                            <provides>
+                                <provide>${project.artifactId}</provide>
+                            </provides>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <!-- rhnpush to RHNS -->
+            <id>deploy-snapshot-rpm</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>${exec-maven-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>deploy-snapshot-rpm</id>
+                                <phase>deploy</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>rhnpush</executable>
+                                    <arguments>
+                                        <argument>--server=${rhn.server}</argument>
+                                        <argument>--channel=${rhn.channel.snapshot}</argument>
+                                        <argument>--nosig</argument>
+                                        <argument>--username=${rhn.user}</argument>
+                                        <argument>--password=${rhn.password}</argument>
+                                        <!-- list of rpms to push, usually only one per project-->
+                                        <argument>--dir=${project.build.directory}/rpm/${project.artifactId}/RPMS/noarch</argument>
+                                        <argument>--force</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <!-- rhnpush to RHNS -->
+            <id>deploy-release-rpm</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>${exec-maven-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>deploy-release-rpm</id>
+                                <phase>deploy</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <configuration>
+                                    <executable>rhnpush</executable>
+                                    <arguments>
+                                        <argument>--server=${rhn.server}</argument>
+                                        <argument>--channel=${rhn.channel.release}</argument>
+                                        <argument>--nosig</argument>
+                                        <argument>--username=${rhn.user}</argument>
+                                        <argument>--password=${rhn.password}</argument>
+                                        <!-- list of rpms to push, usually only one per project-->
+                                        <argument>--dir=${project.build.directory}/rpm/${project.artifactId}/RPMS/noarch</argument>
+                                        <argument>--force</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>
